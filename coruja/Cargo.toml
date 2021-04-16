@@ -1,0 +1,21 @@
+[package]
+name = "coruja"
+version = "0.1.0"
+authors = ["hbobenicio <hbobenicio@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4.14"
+env_logger = "0.8.3"
+
+anyhow = "1.0.40"
+
+# If the vendored Cargo feature is enabled, the openssl-src crate will be used to compile and statically link to a copy of OpenSSL.
+# The build process requires a C compiler, perl, and make. The OpenSSL version will generally track the newest OpenSSL release,
+# and changes to the version are not considered breaking changes.
+# The vendored copy will not be configured to automatically find the system’s root certificates,
+# but the openssl-probe crate can be used to do that instead.
+openssl = { version = "0.10.30", features = ["vendored"] }
+openssl-probe = "0.1.2"

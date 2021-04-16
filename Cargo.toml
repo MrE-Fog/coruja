@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+    "coruja",
+    "coruja-api",
+]
+
+[profile.release]
+lto = true
