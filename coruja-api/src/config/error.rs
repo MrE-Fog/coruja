@@ -2,9 +2,7 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
 pub enum Error {
-    MissingRequiredVaribles {
-        missing_variables: Vec<String>,
-    },
+    MissingRequiredVaribles { missing_variables: Vec<String> },
 }
 
 impl Display for Error {
@@ -16,7 +14,7 @@ impl Display for Error {
                     write!(f, "{}", missing_variable)?;
                 }
                 write!(f, "]")
-            },
+            }
         }
     }
 }

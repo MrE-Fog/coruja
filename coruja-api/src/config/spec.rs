@@ -1,10 +1,12 @@
-use anyhow::{Result, anyhow, Context};
+use anyhow::{anyhow, Context, Result};
 
+#[derive(Copy, Clone, Debug)]
 pub struct Spec<'a, T> {
     pub key: &'a str,
     pub rule: Rule<T>,
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum Rule<T> {
     Required,
     Optional { default: T },
@@ -19,18 +21,15 @@ where
 {
     match std::env::var(spec.key) {
         Ok(value) => {
-            let parsed_value = value.parse::<T>()
+            let parsed_value = value
+                .parse::<T>()
                 .with_context(|| format!("failed parsing {}", spec.key))?;
             Ok(parsed_value)
+        }
+        Err(std::env::VarError::NotPresent) => match spec.rule {
+            Rule::Required => Err(anyhow!("missing required variable {}", spec.key)),
+            Rule::Optional { default } => Ok(default),
         },
-        Err(std::env::VarError::NotPresent) => {
-            match spec.rule {
-                Rule::Required => Err(anyhow!("missing required variable {}", spec.key)),
-                Rule::Optional { default } => {
-                    Ok(default)
-                }
-            }
-        },
-        Err(err) => Err(err)?
+        Err(err) => Err(err)?,
     }
 }

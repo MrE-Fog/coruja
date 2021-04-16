@@ -1,14 +1,14 @@
+mod api;
 mod config;
 mod logging;
-mod api;
 
-use log::{debug};
+use actix_web::{web, App, HttpServer};
 use anyhow::Result;
-use actix_web::{get, web, App, HttpServer, Responder};
+use log::debug;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    logging::init();
+    init();
 
     debug!("loading configuration from environment variables...");
     let cfg = config::Config::from_env("CORUJA_")?;
@@ -16,27 +16,20 @@ async fn main() -> Result<()> {
     let mut server = HttpServer::new(|| {
         App::new()
             .wrap(actix_web::middleware::Logger::default())
-            .service(web::scope("/api")
-                .service(api::certificates::get_certificates)
-            )
+            .service(web::scope("/api").service(api::certificates::get_certificates))
     });
 
-    let addresses: Vec<&str> = cfg.server().address()
-        .trim()
-        .split(",")
-        .collect();
+    let addresses: Vec<&str> = cfg.server().address().trim().split(",").collect();
     for address in addresses {
         server = server.bind(address)?;
     }
 
-    server
-        .run()
-        .await?;
+    server.run().await?;
 
     Ok(())
 }
 
-#[get("/hello/{name}")]
-async fn index(path: web::Path<String>) -> impl Responder {
-    format!("Hello {}!", path)
+fn init() {
+    logging::init();
+    coruja::init();
 }

@@ -8,8 +8,11 @@ edition = "2018"
 
 [dependencies]
 log = "0.4.14"
+
+# This may not be so performant, but it good enough for now atm
 env_logger = "0.8.3"
 
+# Error Handling
 anyhow = "1.0.40"
 
 # If the vendored Cargo feature is enabled, the openssl-src crate will be used to compile and statically link to a copy of OpenSSL.

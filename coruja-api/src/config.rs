@@ -1,7 +1,7 @@
 mod error;
 mod spec;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 #[derive(Debug)]
 pub struct Config {
@@ -16,18 +16,33 @@ pub struct ServerConfig {
 
 impl Config {
     pub fn from_env(prefix: &str) -> Result<Config> {
-        let mut missing_required_variables: Vec<String> = Vec::new();
+        let mut bad_variables: Vec<String> = Vec::new();
 
-        // TODO refactor this code to capture the errors from getting env values from spec
+        let server_address_spec = spec::Spec::<String> {
+            key: &format!("{}{}", prefix, "SERVER_ADDRESS"),
+            rule: spec::Rule::Optional {
+                default: String::from("localhost:8080"),
+            },
+        };
+        let server_address = match spec::env_value_from_spec(server_address_spec.clone()) {
+            Ok(v) => Some(v),
+            Err(err) => {
+                eprintln!("{:?}", err);
+                bad_variables.push(server_address_spec.key.to_string());
+                None
+            }
+        };
+
+        if !bad_variables.is_empty() {
+            return Err(anyhow!(error::Error::MissingRequiredVaribles {
+                missing_variables: bad_variables,
+            }));
+        }
+
         // then add them all to a list to present to the user.
         let config = Config {
             server: ServerConfig {
-                address: spec::env_value_from_spec(spec::Spec::<String> {
-                    key: &format!("{}{}", prefix, "SERVER_ADDRESS"),
-                    rule: spec::Rule::Optional {
-                        default: String::from("localhost:8080"),
-                    },
-                })?,
+                address: server_address.unwrap(),
             },
         };
 
