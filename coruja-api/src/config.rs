@@ -3,12 +3,12 @@ mod spec;
 
 use anyhow::{anyhow, Result};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Config {
     server: ServerConfig,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ServerConfig {
     /// server's binding address (may be a list of addresses separated by commas)
     address: String,

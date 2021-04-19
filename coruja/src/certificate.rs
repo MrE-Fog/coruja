@@ -7,7 +7,9 @@ use openssl::ssl::{SslConnector, SslConnectorBuilder, SslMethod, SslStream, SslV
 use openssl::stack::StackRef;
 use openssl::x509::{X509Ref, X509};
 
-pub fn get_cert_chain_openssl(host: &str, port: &str, insecure: bool) -> Result<Vec<String>> {
+// TODO make this async!
+// tokio-openssl and openssl-async crates may help
+pub fn get_server_cert_chain(host: &str, port: &str, insecure: bool) -> Result<Vec<String>> {
     let connector: SslConnector = new_ssl_connector(insecure)?;
 
     let url = format!("{}:{}", host, port);
@@ -29,9 +31,8 @@ pub fn get_cert_chain_openssl(host: &str, port: &str, insecure: bool) -> Result<
 }
 
 /// Get a vec of certificates from a https server for a given url.
+// TODO Make this function async!
 pub fn get_certs(url: &str, insecure: bool) -> Result<Vec<X509>> {
-    openssl_probe::init_ssl_cert_env_vars();
-
     let connector: SslConnector = new_ssl_connector(insecure)?;
 
     let stream: TcpStream = TcpStream::connect(&url).context("io")?;
@@ -72,10 +73,9 @@ fn new_ssl_connector(insecure: bool) -> Result<SslConnector> {
 
 /// Returns the common name of the certificate
 fn _cert_common_name(cert: &X509) -> Result<String> {
-    let name_entries = cert.subject_name().entries();
-    for name_entry in name_entries {
-        let obj = name_entry.object();
-        if obj.nid() == Nid::COMMONNAME {
+    for name_entry in cert.subject_name().entries() {
+        let asn1_object = name_entry.object();
+        if asn1_object.nid() == Nid::COMMONNAME {
             return name_entry
                 .data()
                 .as_utf8()
