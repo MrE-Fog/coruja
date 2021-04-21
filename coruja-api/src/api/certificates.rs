@@ -32,13 +32,19 @@ pub async fn get_certificates(
     accept: web::Header<Accept>,
     query: web::Query<SiteQueryParams>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let cert_chain_result = web::block(move || {
-        // TODO descobrir como mapear erro do anyhow em uma resposta do actix
-        let host = &query.host;
-        let port = query.port.clone().unwrap_or_else(|| String::from("443"));
-        let insecure = query.insecure.unwrap_or(false);
-        coruja::certificate::get_server_cert_chain(host, &port, insecure)
-    }).await?;
+    // let cert_chain_result = web::block(move || {
+    //     // TODO descobrir como mapear erro do anyhow em uma resposta do actix
+    //     let host = &query.host;
+    //     let port = query.port.clone().unwrap_or_else(|| String::from("443"));
+    //     let insecure = query.insecure.unwrap_or(false);
+    //     coruja::certificate::get_server_cert_chain(host, &port, insecure).await?
+    // }).await?;
+
+    // TODO descobrir como mapear erro do anyhow em uma resposta do actix
+    let host = &query.host;
+    let port = query.port.clone().unwrap_or_else(|| String::from("443"));
+    let insecure = query.insecure.unwrap_or(false);
+    let cert_chain_result = coruja::certificate::get_server_cert_chain(host, &port, insecure).await;
 
     let certs: Vec<String> = match cert_chain_result {
         Ok(certs) => certs,

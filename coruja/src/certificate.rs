@@ -1,25 +1,33 @@
-use std::net::TcpStream;
+use std::pin::Pin;
+
+use tokio::net::TcpStream;
+// use tokio::io::{AsyncRead, AsyncWrite};
+// use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use anyhow::{anyhow, Context, Result};
 
 use openssl::nid::Nid;
-use openssl::ssl::{SslConnector, SslConnectorBuilder, SslMethod, SslStream, SslVerifyMode};
+use openssl::ssl::{SslConnector, SslConnectorBuilder, ConnectConfiguration, SslMethod, SslVerifyMode, Ssl};
+use tokio_openssl::SslStream;
 use openssl::stack::StackRef;
 use openssl::x509::{X509Ref, X509};
 
-// TODO make this async!
-// tokio-openssl and openssl-async crates may help
-pub fn get_server_cert_chain(host: &str, port: &str, insecure: bool) -> Result<Vec<String>> {
-    let connector: SslConnector = new_ssl_connector(insecure)?;
+pub async fn get_server_cert_chain(host: &str, port: &str, insecure: bool) -> Result<Vec<String>> {
+    let ssl_connect_config: ConnectConfiguration = new_ssl_connect_config(insecure)?;
 
     let url = format!("{}:{}", host, port);
-    let stream: TcpStream = TcpStream::connect(&url).context("io")?;
+    let tcp_stream: TcpStream = TcpStream::connect(&url).await.context("io")?;
 
-    let stream: SslStream<TcpStream> = connector
-        .connect(&url, stream)
+    let ssl: Ssl = ssl_connect_config.into_ssl(host)?;
+    let mut ssl_stream = SslStream::new(ssl, tcp_stream)?;
+
+    // https://github.com/cemoktra/ice-rs/blob/main/src/ssl.rs
+    Pin::new(&mut ssl_stream)
+        .connect()
+        .await
         .map_err(|openssl_err| anyhow!("openssl: handshake: {}", openssl_err))?;
 
-    let cert_stack: &StackRef<X509> = stream.ssl().peer_cert_chain().ok_or(anyhow!(
+    let cert_stack: &StackRef<X509> = ssl_stream.ssl().peer_cert_chain().ok_or(anyhow!(
         "it was not possible to get certificate chain from server"
     ))?;
 
@@ -32,26 +40,26 @@ pub fn get_server_cert_chain(host: &str, port: &str, insecure: bool) -> Result<V
 
 /// Get a vec of certificates from a https server for a given url.
 // TODO Make this function async!
-pub fn get_certs(url: &str, insecure: bool) -> Result<Vec<X509>> {
-    let connector: SslConnector = new_ssl_connector(insecure)?;
+// pub fn get_certs(url: &str, insecure: bool) -> Result<Vec<X509>> {
+//     let tls_connect_config: ConnectConfiguration = new_ssl_connector(insecure)?;
+//
+//     let stream: TcpStream = TcpStream::connect(&url).context("io")?;
+//
+//     let stream: SslStream<TcpStream> = connector
+//         .connect(&url, stream)
+//         .map_err(|openssl_err| anyhow!("openssl: handshake: {}", openssl_err))?;
+//
+//     let cert_stack: &StackRef<X509> = stream.ssl().peer_cert_chain().ok_or(anyhow!(
+//         "it was not possible to get certificate chain from server"
+//     ))?;
+//
+//     let certs: Vec<X509> = cert_stack.iter().map(X509Ref::to_owned).collect();
+//
+//     Ok(certs)
+// }
 
-    let stream: TcpStream = TcpStream::connect(&url).context("io")?;
-
-    let stream: SslStream<TcpStream> = connector
-        .connect(&url, stream)
-        .map_err(|openssl_err| anyhow!("openssl: handshake: {}", openssl_err))?;
-
-    let cert_stack: &StackRef<X509> = stream.ssl().peer_cert_chain().ok_or(anyhow!(
-        "it was not possible to get certificate chain from server"
-    ))?;
-
-    let certs: Vec<X509> = cert_stack.iter().map(X509Ref::to_owned).collect();
-
-    Ok(certs)
-}
-
-/// Creates a new SSL connector
-fn new_ssl_connector(insecure: bool) -> Result<SslConnector> {
+/// Creates a new SSL connect configuration
+fn new_ssl_connect_config(insecure: bool) -> Result<ConnectConfiguration> {
     let mut connector_builder: SslConnectorBuilder =
         SslConnector::builder(SslMethod::tls()).context("openssl")?;
 
@@ -68,7 +76,7 @@ fn new_ssl_connector(insecure: bool) -> Result<SslConnector> {
             })?;
     }
 
-    Ok(connector_builder.build())
+    Ok(connector_builder.build().configure()?)
 }
 
 /// Returns the common name of the certificate

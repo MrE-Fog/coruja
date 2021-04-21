@@ -9,11 +9,15 @@ edition = "2018"
 [dependencies]
 log = "0.4.14"
 
-# This may not be so performant, but it good enough for now atm
+# This may not be so performant, but it's good enough for now
 env_logger = "0.8.3"
 
 # Error Handling
 anyhow = "1.0.40"
+
+# These needs to be aligned with actix-web tokio version
+tokio = { version = "1.4.0", features = ["full"] }
+tokio-openssl = "0.6.1"
 
 # If the vendored Cargo feature is enabled, the openssl-src crate will be used to compile and statically link to a copy of OpenSSL.
 # The build process requires a C compiler, perl, and make. The OpenSSL version will generally track the newest OpenSSL release,
@@ -22,3 +26,4 @@ anyhow = "1.0.40"
 # but the openssl-probe crate can be used to do that instead.
 openssl = { version = "0.10.30", features = ["vendored"] }
 openssl-probe = "0.1.2"
+
