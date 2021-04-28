@@ -6,20 +6,12 @@ mod utils;
 
 use actix_web::{web, App, HttpServer};
 use anyhow::Result;
-use log::debug;
-
-use config::Config;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    init();
+    app::init();
 
-    let app_state: app::State = {
-        debug!("loading configuration from environment variables...");
-        let config = Config::from_env("CORUJA_")?;
-
-        app::State { config }
-    };
+    let app_state = app::State::new()?;
     let addresses: Vec<String> = app_state
         .config
         .server()
@@ -43,9 +35,4 @@ async fn main() -> Result<()> {
     server.run().await?;
 
     Ok(())
-}
-
-fn init() {
-    logging::init();
-    coruja::init();
 }

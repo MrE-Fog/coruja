@@ -373,6 +373,8 @@ dependencies = [
  "env_logger",
  "log",
  "mime",
+ "openssl",
+ "openssl-probe",
  "serde",
  "serde_json",
 ]

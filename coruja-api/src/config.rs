@@ -3,7 +3,7 @@ mod spec;
 
 use anyhow::{anyhow, Result};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Config {
     server: ServerConfig,
 }
