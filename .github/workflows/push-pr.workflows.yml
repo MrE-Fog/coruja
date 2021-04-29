@@ -1,0 +1,37 @@
+name: on-push-and-pull-request
+
+on:
+    push:
+        branches:
+            - '*'
+        tags-ignore:
+            - '*'
+
+    pull_request:
+        branches:
+            - '*'
+        tags-ignore:
+            - '*'
+env:
+    CARGO_TERM_COLOR: always
+
+jobs:
+    build-test:
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: actions/checkout@v2
+
+            -   name: Rust Toolchain Install
+                uses: actions-rs/toolchain@v1.0.6
+                with:
+                    toolchain: stable
+                    # components: rustfmt, clippy
+
+            -   name: Cargo Build
+                run: cargo build --release # --all-features
+
+            -   name: Cargo Build
+                uses: actions-rs/cargo@v1
+                with:
+                    command: build
+                    args: --release --all-features
