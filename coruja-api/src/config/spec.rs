@@ -2,13 +2,17 @@ use anyhow::{anyhow, Context, Result};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Spec<'a, T> {
+    // TODO If we change this to a String we could be more flexibility to organize the config code
     pub key: &'a str,
     pub rule: Rule<T>,
 }
 
 #[derive(Copy, Clone, Debug)]
 pub enum Rule<T> {
+    #[allow(dead_code)]
     Required,
+
+    // TODO make default a Option (None default values are desirable)
     Optional { default: T },
 }
 

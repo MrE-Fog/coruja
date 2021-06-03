@@ -3,7 +3,6 @@ use actix_web::{get, http::header::Accept, web, HttpResponse};
 use coruja;
 use serde::Deserialize;
 use openssl::x509::X509;
-use openssl::asn1::Asn1Time;
 
 #[derive(Deserialize)]
 pub struct SiteQueryParams {
@@ -15,14 +14,13 @@ pub struct SiteQueryParams {
 mod payload {
     use serde::Serialize;
     use openssl::x509::X509;
-    use std::borrow::Borrow;
-    use openssl::asn1::{Asn1Time, TimeDiff};
+    use openssl::asn1::Asn1Time;
 
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct Certificate {
-        subject_common_name: String,
-        issuer_common_name: String,
+        subject: Subject,
+        issuer: Issuer,
         not_before: String,
         not_after: String,
         expires_in_days: i32,
@@ -30,20 +28,36 @@ mod payload {
         pem: String,
     }
 
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Subject {
+        common_name: String,
+    }
+
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Issuer {
+        common_name: String,
+    }
+
     impl Certificate {
         pub fn try_from_x509(crt: &X509) -> anyhow::Result<Self> {
-            let subject_common_name: String = coruja::certificate::subject_common_name(&crt)?;
-            let issuer_common_name: String = coruja::certificate::issuer_common_name(&crt)?;
+            let subject = Subject {
+                common_name: coruja::certificate::subject_common_name(crt)?,
+            };
+            let issuer = Issuer {
+                common_name: coruja::certificate::issuer_common_name(crt)?,
+            };
             let not_before: String = crt.not_before().to_string();
             let not_after: String = crt.not_after().to_string();
-            let now = Asn1Time::days_from_now(0)?;
+            let now: Asn1Time = Asn1Time::days_from_now(0)?;
             let expires_in_days: i32 = now.diff(crt.not_after())?.days;
             let serial_number: String = crt.serial_number().to_bn()?.to_string();
             let pem: String = String::from_utf8(crt.to_pem()?)?;
 
             Ok(Certificate {
-                subject_common_name,
-                issuer_common_name,
+                subject,
+                issuer,
                 not_before,
                 not_after,
                 expires_in_days,

@@ -21,6 +21,8 @@ async fn main() -> Result<()> {
         .map(String::from)
         .collect();
 
+    let server_workers: usize = app_state.config.server().workers();
+
     let mut server = HttpServer::new(move || {
         App::new()
             .data(app_state.clone())
@@ -31,6 +33,7 @@ async fn main() -> Result<()> {
     for address in addresses {
         server = server.bind(address)?;
     }
+    server = server.workers(server_workers);
 
     server.run().await?;
 
