@@ -3,7 +3,9 @@ name = "coruja-api"
 version = "0.1.0"
 authors = ["hbobenicio <hbobenicio@gmail.com>"]
 edition = "2018"
-
+description = "An API server for performing tls checkings and x509 certificates utilities"
+homepage = "https://github.com/hbobenicio/coruja"
+repository = "https://github.com/hbobenicio/coruja"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
